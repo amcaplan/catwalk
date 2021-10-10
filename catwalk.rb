@@ -87,6 +87,7 @@ thread1 = Thread.new do
   sleep initial_sleep - 0.1
   active_items = []
   loop do
+    next if $paused
     state[:mutex].synchronize do
       cur_time = Time.now
       begin
@@ -140,6 +141,8 @@ thread2 = Thread.new do
         state[:map] = state[:map].rotate(-1)
       when 'B'
         state[:map] = state[:map].rotate(1)
+      when 'p'
+        $paused = !$paused
       when 'q'
         main_window.close
         Curses.close_screen
