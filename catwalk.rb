@@ -44,17 +44,20 @@ def calculate_score(events)
 end
 
 def score_for(event, active_items)
-  score = EVENT_SYMBOLS[event]
-  File.write('./scoring.txt', active_items.inspect)
+  EVENT_SYMBOLS[event] * score_multiplier(active_items)
+end
+
+def score_multiplier(active_items)
+  multiplier = 1
   active_items.each do |entry|
     case entry[:item]
     when :🦆
-      score *= 2
+      multiplier *= 2
     when :🐦
-      score *= 3
+      multiplier *= 3
     end
   end
-  score
+  multiplier
 end
 
 def render_frame(timer_window, windows, state, init: nil)
@@ -63,7 +66,8 @@ def render_frame(timer_window, windows, state, init: nil)
   timer_window << "#{'%.2f' % (Time.now - init).round(2)} seconds elapsed /" if init
   # mem = GetProcessMem.new
   # timer_window << " Memory used : #{mem.mb.round(0)} MB"
-  timer_window << " Min line size: #{state[:map].map(&:size).min}"
+  # timer_window << " Min line size: #{state[:map].map(&:size).min}"
+  timer_window << " Current multiplier: #{score_multiplier(active_items(**state))}x"
   timer_window << " Score: #{state[:score]}"
   timer_window << " Available Items: #{state[:map].map(&:join).join.gsub('🌱','').size}"
   timer_window.refresh
@@ -86,23 +90,22 @@ def render_frame(timer_window, windows, state, init: nil)
   end
 end
 
+def active_items(temp_items:, **)
+  cur_time = Time.now
+  current_temp_item_index = temp_items.bsearch_index { |entry| entry[:time] - 20 > cur_time }
+  temp_items[current_temp_item_index..-1].select { |entry| entry[:end_time] > cur_time }
+end
+
 thread1 = Thread.new do
   sleep initial_sleep - 0.1
-  active_items = []
   loop do
     next if $paused
     state[:mutex].synchronize do
       cur_time = Time.now
-      begin
-        current_temp_item_index = state[:temp_items].bsearch_index { |entry| entry[:time] - 20 > cur_time }
-      rescue => e
-        File.write('./errors.txt', state[:temp_items].inspect)
-      end
-      active_items = state[:temp_items][current_temp_item_index..-1].select { |entry| entry[:end_time] > cur_time }
       current_symbol = state[:map][CAT_LOCATION[:y]][CAT_LOCATION[:x]]
       if EVENT_SYMBOLS.key?(current_symbol)
         state[:events] << current_symbol
-        state[:score] += score_for(current_symbol, active_items)
+        state[:score] += score_for(current_symbol, active_items(**state))
       elsif TEMPORARY_ITEMS.key?(current_symbol)
         state[:events] << current_symbol
         state[:temp_items] << { time: cur_time, item: current_symbol, end_time: Time.now + TEMPORARY_ITEMS[current_symbol] }
@@ -127,7 +130,7 @@ thread1 = Thread.new do
       affected_line[0] = map_items.sample if affected_line
       state[:last_updated] = Time.now
     end
-    sleep(1.0/(7.0 * [(2 * active_items.count { |entry| entry[:item] == :👟 }), 1].max))
+    sleep(1.0/(7.0 * [(2 * active_items(**state).count { |entry| entry[:item] == :👟 }), 1].max))
   rescue => e
     File.write('./error.txt', e.full_message)
     exit
