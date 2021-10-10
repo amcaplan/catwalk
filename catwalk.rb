@@ -3,6 +3,24 @@
 require 'timecop'
 require 'curses'
 
+INSTRUCTIONS = <<~INSTRUCTIONS
+  Press up and down to move the cat.
+  Collect items to win points and
+  change the game!
+
+  🔄 Turn left
+  💰 10 pts
+  🐁 6 pts, creates skull
+  💀 1 pt, clean mouse remains
+  👟 Speed up
+  🦆 Double scoring!
+  🐦 Triple scoring!
+  🌀 Cyclone mixes it up!
+
+  'p' to pause
+  'q' to quit
+INSTRUCTIONS
+
 TEMPORARY_ITEMS = {
   👟: 10,
   🦆: 20,
@@ -31,14 +49,16 @@ state = {
 Curses.init_screen
 Curses.cbreak
 Curses.noecho
-main_window = Curses::Window.new(SIDE_SIZE + 3, 80, 0, 0)
+main_window = Curses::Window.new(SIDE_SIZE + 3, 90, 0, 0)
+main_width = WIDTH * 2 + 2
 windows = {
   map: {
     last_updated: Time.now - 1,
     window: main_window.subwin(HEIGHT + 2, WIDTH * 2 + 2, 1, 0)
   }
 }
-timer_window = main_window.subwin(1, 80, 0, 0)
+side_panel = main_window.subwin(HEIGHT + 2, 90 - main_width, 1, main_width)
+timer_window = main_window.subwin(1, 90, 0, 0)
 
 def calculate_score(events)
   events.sum(&EVENT_SYMBOLS)
@@ -61,10 +81,23 @@ def score_multiplier(active_items)
   multiplier
 end
 
-def render_frame(timer_window, windows, state, init: nil)
+def render_instructions(side_panel)
+  side_panel.clear
+  INSTRUCTIONS.each_line.each_with_index do |line, index|
+    side_panel.setpos(index + 1, 1)
+    side_panel << "#{line}\n"
+  end
+  if $paused
+    side_panel << "\n\n PAUSED"
+  end
+  side_panel.box('|', '-')
+  side_panel.refresh
+end
+
+def render_frame(timer_window, side_panel, windows, state, init: nil)
   timer_window.clear
   timer_window.setpos(1, 1)
-  timer_window << "#{'%.2f' % (Time.now - init).round(2)} seconds elapsed /" if init
+  timer_window << "#{'%.2f' % (init ? Time.now - init : 0).round(2)} seconds elapsed /"
   # mem = GetProcessMem.new
   # timer_window << " Memory used : #{mem.mb.round(0)} MB"
   # timer_window << " Min line size: #{state[:map].map(&:size).min}"
@@ -72,6 +105,7 @@ def render_frame(timer_window, windows, state, init: nil)
   timer_window << " Score: #{state[:score]}"
   timer_window << " Available Items: #{state[:map].map(&:join).join.gsub('🌱','').size}"
   timer_window.refresh
+  render_instructions(side_panel)
   windows.each do |label, window_data|
     window = window_data[:window]
     if state[:last_updated] > window_data[:last_updated]
@@ -137,7 +171,7 @@ thread1 = Thread.new do
       apply_tornado!(state)
       state[:last_updated] = Time.now
     end
-    sleep(1.0/(7.0 * [(2 * active_items(**state).count { |entry| entry[:item] == :👟 }), 1].max))
+    sleep(1.0/(5.0 * [(2 * active_items(**state).count { |entry| entry[:item] == :👟 }), 1].max))
   rescue => e
     File.write('./error.txt', e.full_message)
     exit
@@ -181,12 +215,12 @@ thread2 = Thread.new do
 end
 
 #sleep 0.01 until state.each_value.all? { |val| val[:string] }
-render_frame(timer_window, windows, state)
+render_frame(timer_window, side_panel, windows, state)
 sleep initial_sleep
 
 init = Time.now
 loop do
-  render_frame(timer_window, windows, state, init: init)
+  render_frame(timer_window, side_panel, windows, state, init: init)
   sleep 0.05
 end
 
