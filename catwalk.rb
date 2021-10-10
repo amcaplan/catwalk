@@ -1,4 +1,6 @@
-# require 'get_process_mem'
+# Must run first:
+# # gem install timecop
+require 'timecop'
 require 'curses'
 
 TEMPORARY_ITEMS = {
@@ -143,6 +145,11 @@ thread2 = Thread.new do
         state[:map] = state[:map].rotate(1)
       when 'p'
         $paused = !$paused
+        if $paused
+          Timecop.freeze
+        else
+          Timecop.travel
+        end
       when 'q'
         main_window.close
         Curses.close_screen
