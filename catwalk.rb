@@ -11,7 +11,7 @@ TEMPORARY_ITEMS = {
 map_items = [:🌱] * 200 + [:🔄] * 4 + [:💰] * 4 + [:🐁] * 2 + TEMPORARY_ITEMS.keys
 SIDE_SIZE = 25
 map = SIDE_SIZE.times.map { map_items.sample(SIDE_SIZE) }
-EVENT_SYMBOLS = { :💰 => 100, :🐁 => 60, :🔄 => 20, :💀 => 5 }
+EVENT_SYMBOLS = { :💰 => 10, :🐁 => 6, :🔄 => 2, :💀 => 1 }
 WIDTH = map.first.size
 HEIGHT = map.size
 CAT_LOCATION = { y: HEIGHT / 2, x: WIDTH / 2 }
@@ -45,9 +45,10 @@ end
 
 def score_for(event, active_items)
   score = EVENT_SYMBOLS[event]
-  active_items.each do |item|
-    case item
-    when :🪀
+  File.write('./scoring.txt', active_items.inspect)
+  active_items.each do |entry|
+    case entry[:item]
+    when :🦆
       score *= 2
     when :🐦
       score *= 3
