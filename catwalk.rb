@@ -34,6 +34,15 @@ EVENT_SYMBOLS = { :💰 => 10, :🐁 => 6, :🔄 => 2, :💀 => 1 }
 WIDTH = map.first.size
 HEIGHT = map.size
 CAT_LOCATION = { y: HEIGHT / 2, x: WIDTH / 2 }
+AVATAR = '🐈'
+AVATARS = {
+  'cat' => '🐈',
+  'tiger' => '🐅',
+  'camel' => '🐫',
+  'horse' => '🐎',
+  'whale' => '🐋',
+  'frog' => '🐸'
+}
 
 initial_sleep = 2
 
@@ -115,7 +124,7 @@ def render_frame(timer_window, side_panel, windows, state, init: nil)
         window.setpos(index + 1, 1)
         if index == CAT_LOCATION[:y]
           line = line.dup
-          line[CAT_LOCATION[:x]] = :🐈
+          line[CAT_LOCATION[:x]] = AVATAR
         end
         window << line.join
       end
@@ -178,10 +187,35 @@ thread1 = Thread.new do
   end
 end
 
+class LimitedQueue
+  def initialize(max_size)
+    @arr = []
+    @max_size = max_size
+  end
+
+  def push(item)
+    @arr << item
+    if @arr.size > @max_size
+      @arr.shift
+    end
+  end
+
+  def end_with?(str)
+    @arr.last(str.size).join == str
+  end
+end
+
 thread2 = Thread.new do
   sleep initial_sleep - 0.1
+  queue = LimitedQueue.new(10)
   loop do
     input = Curses.getch
+    queue.push(input)
+    AVATARS.each do |code, avatar|
+      if queue.end_with?(code)
+        AVATAR.replace(avatar)
+      end
+    end
     state[:mutex].synchronize do
       case input
       when 'A'
@@ -204,7 +238,7 @@ thread2 = Thread.new do
         end
         puts "Your final score: #{state[:score]}"
         exit
-      when 'd'
+      when 'D'
         main_window.close
         Curses.close_screen
         p state[:map]
