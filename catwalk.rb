@@ -6,7 +6,8 @@ require 'curses'
 TEMPORARY_ITEMS = {
   👟: 10,
   🦆: 20,
-  🐦: 15
+  🐦: 15,
+  🌀: 2
 }
 map_items = [:🌱] * 200 + [:🔄] * 4 + [:💰] * 4 + [:🐁] * 2 + TEMPORARY_ITEMS.keys
 SIDE_SIZE = 25
@@ -96,6 +97,11 @@ def active_items(temp_items:, **)
   temp_items[current_temp_item_index..-1].select { |entry| entry[:end_time] > cur_time }
 end
 
+def apply_tornado!(state)
+  return if active_items(**state).none? { |entry| entry[:item] == :🌀 }
+  state[:map] = state[:map].flatten.shuffle.each_slice(SIDE_SIZE).to_a
+end
+
 thread1 = Thread.new do
   sleep initial_sleep - 0.1
   loop do
@@ -128,6 +134,7 @@ thread1 = Thread.new do
       # randomly add new item
       affected_line = state[:map].select { |line| line[0] == :🌱 }.sample
       affected_line[0] = map_items.sample if affected_line
+      apply_tornado!(state)
       state[:last_updated] = Time.now
     end
     sleep(1.0/(7.0 * [(2 * active_items(**state).count { |entry| entry[:item] == :👟 }), 1].max))
