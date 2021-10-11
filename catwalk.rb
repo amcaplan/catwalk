@@ -69,10 +69,6 @@ windows = {
 side_panel = main_window.subwin(HEIGHT + 2, 90 - main_width, 1, main_width)
 timer_window = main_window.subwin(1, 90, 0, 0)
 
-def calculate_score(events)
-  events.sum(&EVENT_SYMBOLS)
-end
-
 def score_for(event, active_items)
   EVENT_SYMBOLS[event] * score_multiplier(active_items)
 end
