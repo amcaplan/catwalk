@@ -125,7 +125,7 @@ def active_items(temp_items:, **)
   }
 end
 
-def apply_tornado!(state)
+def apply_cyclone!(state)
   return if active_items(**state).none?(&:cyclone?)
   File.write('cyclone_items', active_items(**state))
   state[:map] = state[:map].flatten.shuffle.each_slice(SIDE_SIZE).to_a
@@ -163,7 +163,7 @@ thread1 = Thread.new do
       # randomly add new item
       affected_line = state[:map].select { |line| line[0] == :🌱 }.sample
       affected_line[0] = map_items.sample if affected_line
-      apply_tornado!(state)
+      apply_cyclone!(state)
       state[:last_updated] = Time.now
     end
     sleep(1.0/(5.0 * [(2 * active_items(**state).count(&:shoe?)), 1].max))
