@@ -26,7 +26,7 @@ INSTRUCTIONS
 map_items = [:🌱] * 200 + [:🔄] * 4 + [:💰] * 4 + [:🐁] * 2 + Item::TEMPORARY_ITEMS.keys
 SIDE_SIZE = 25
 map = SIDE_SIZE.times.map { map_items.sample(SIDE_SIZE) }
-EVENT_SYMBOLS = { :💰 => 10, :🐁 => 6, :🔄 => 2, :💀 => 1 }
+SCORES = { :💰 => 10, :🐁 => 6, :🔄 => 2, :💀 => 1 }
 WIDTH = map.first.size
 HEIGHT = map.size
 CAT_LOCATION = { y: HEIGHT / 2, x: WIDTH / 2 }
@@ -66,7 +66,7 @@ side_panel = main_window.subwin(HEIGHT + 2, 90 - main_width, 1, main_width)
 timer_window = main_window.subwin(1, 90, 0, 0)
 
 def score_for(event, active_items)
-  EVENT_SYMBOLS[event] * score_multiplier(active_items)
+  SCORES[event] * score_multiplier(active_items)
 end
 
 def score_multiplier(active_items)
@@ -139,7 +139,7 @@ thread1 = Thread.new do
     state[:mutex].synchronize do
       cur_time = Time.now
       current_symbol = state[:map][CAT_LOCATION[:y]][CAT_LOCATION[:x]]
-      if EVENT_SYMBOLS.key?(current_symbol)
+      if SCORES.key?(current_symbol)
         state[:events] << current_symbol
         state[:score] += score_for(current_symbol, active_items(**state))
       elsif Item::TEMPORARY_ITEMS.key?(current_symbol)
