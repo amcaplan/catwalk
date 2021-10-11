@@ -14,9 +14,9 @@ INSTRUCTIONS = <<~INSTRUCTIONS
   💰 10 pts
   🐁 6 pts, creates skull
   💀 1 pt, clean mouse remains
-  👟 Speed up
+  👟 Turbo boost
   🦆 Double scoring!
-  🐦 Triple scoring!
+  🐦 Triple scoring!!
   🌀 Cyclone mixes it up!
 
   'p' to pause/unpause
