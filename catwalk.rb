@@ -2,6 +2,8 @@
 # # gem install timecop
 require 'timecop'
 require 'curses'
+require __dir__ + '/limited_queue'
+require __dir__ + '/item'
 
 INSTRUCTIONS = <<~INSTRUCTIONS
   Press up and down to move the cat.
@@ -21,13 +23,7 @@ INSTRUCTIONS = <<~INSTRUCTIONS
   'q' to quit
 INSTRUCTIONS
 
-TEMPORARY_ITEMS = {
-  👟: 10,
-  🦆: 20,
-  🐦: 15,
-  🌀: 2
-}
-map_items = [:🌱] * 200 + [:🔄] * 4 + [:💰] * 4 + [:🐁] * 2 + TEMPORARY_ITEMS.keys
+map_items = [:🌱] * 200 + [:🔄] * 4 + [:💰] * 4 + [:🐁] * 2 + Item::TEMPORARY_ITEMS.keys
 SIDE_SIZE = 25
 map = SIDE_SIZE.times.map { map_items.sample(SIDE_SIZE) }
 EVENT_SYMBOLS = { :💰 => 10, :🐁 => 6, :🔄 => 2, :💀 => 1 }
@@ -74,16 +70,7 @@ def score_for(event, active_items)
 end
 
 def score_multiplier(active_items)
-  multiplier = 1
-  active_items.each do |entry|
-    case entry[:item]
-    when :🦆
-      multiplier *= 2
-    when :🐦
-      multiplier *= 3
-    end
-  end
-  multiplier
+  active_items.inject(1) { |accum, item| accum * item.score_multiplier }
 end
 
 def render_instructions(side_panel)
@@ -131,13 +118,16 @@ def render_frame(timer_window, side_panel, windows, state, init: nil)
 end
 
 def active_items(temp_items:, **)
-  cur_time = Time.now
-  current_temp_item_index = temp_items.bsearch_index { |entry| entry[:time] - 20 > cur_time }
-  temp_items[current_temp_item_index..-1].select { |entry| entry[:end_time] > cur_time }
+  current_temp_item_index =
+    temp_items.bsearch_index { |i| i.start_time + Item::MAX_DURATION > Time.now }
+  temp_items[current_temp_item_index..-1].select(&:active?).tap { |retval|
+    File.write('active_items', retval.inspect)
+  }
 end
 
 def apply_tornado!(state)
-  return if active_items(**state).none? { |entry| entry[:item] == :🌀 }
+  return if active_items(**state).none?(&:cyclone?)
+  File.write('cyclone_items', active_items(**state))
   state[:map] = state[:map].flatten.shuffle.each_slice(SIDE_SIZE).to_a
 end
 
@@ -151,9 +141,9 @@ thread1 = Thread.new do
       if EVENT_SYMBOLS.key?(current_symbol)
         state[:events] << current_symbol
         state[:score] += score_for(current_symbol, active_items(**state))
-      elsif TEMPORARY_ITEMS.key?(current_symbol)
+      elsif Item::TEMPORARY_ITEMS.key?(current_symbol)
         state[:events] << current_symbol
-        state[:temp_items] << { time: cur_time, item: current_symbol, end_time: Time.now + TEMPORARY_ITEMS[current_symbol] }
+        state[:temp_items] << Item.new(current_symbol)
       end
       # overwrite symbol
       state[:map][CAT_LOCATION[:y]][CAT_LOCATION[:x]] =
@@ -176,28 +166,10 @@ thread1 = Thread.new do
       apply_tornado!(state)
       state[:last_updated] = Time.now
     end
-    sleep(1.0/(5.0 * [(2 * active_items(**state).count { |entry| entry[:item] == :👟 }), 1].max))
+    sleep(1.0/(5.0 * [(2 * active_items(**state).count(&:shoe?)), 1].max))
   rescue => e
     File.write('./error.txt', e.full_message)
     exit
-  end
-end
-
-class LimitedQueue
-  def initialize(max_size)
-    @arr = []
-    @max_size = max_size
-  end
-
-  def push(item)
-    @arr << item
-    if @arr.size > @max_size
-      @arr.shift
-    end
-  end
-
-  def end_with?(str)
-    @arr.last(str.size).join == str
   end
 end
 
@@ -237,7 +209,7 @@ thread2 = Thread.new do
       when 'D'
         main_window.close
         Curses.close_screen
-        p state[:map]
+        p state
         exit
       end
     end
