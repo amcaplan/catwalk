@@ -24,6 +24,7 @@ INSTRUCTIONS = <<~INSTRUCTIONS
 INSTRUCTIONS
 
 map_items = [:🌱] * 200 + [:🔄] * 4 + [:💰] * 4 + [:🐁] * 2 + Item::TEMPORARY_ITEMS.keys
+special_items = map_items - [:🌱]
 SIDE_SIZE = 25
 map = SIDE_SIZE.times.map { map_items.sample(SIDE_SIZE) }
 SCORES = { :💰 => 10, :🐁 => 6, :🔄 => 2, :💀 => 1 }
@@ -161,9 +162,11 @@ thread1 = Thread.new do
       else
         state[:map] = state[:map].map { |line| line.rotate(-1) }
       end
-      # randomly add new item
-      affected_line = state[:map].select { |line| line[0] == :🌱 }.sample
-      affected_line[0] = map_items.sample if affected_line
+      # randomly add new item, approx. once every 3 cycles
+      if rand(SIDE_SIZE * 3) == 1
+        affected_line = state[:map].select { |line| line[0] == :🌱 }.sample
+        affected_line[0] = special_items.sample if affected_line
+      end
       apply_cyclone!(state)
       state[:last_updated] = Time.now
     end
