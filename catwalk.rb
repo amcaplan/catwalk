@@ -17,7 +17,7 @@ INSTRUCTIONS = <<~INSTRUCTIONS
   🐦 Triple scoring!
   🌀 Cyclone mixes it up!
 
-  'p' to pause
+  'p' to pause/unpause
   'q' to quit
 INSTRUCTIONS
 
