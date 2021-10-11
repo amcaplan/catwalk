@@ -118,8 +118,9 @@ def render_frame(timer_window, side_panel, windows, state, init: nil)
 end
 
 def active_items(temp_items:, **)
+  earliest_active_start_time = Time.now - Item::MAX_DURATION
   current_temp_item_index =
-    temp_items.bsearch_index { |i| i.start_time + Item::MAX_DURATION > Time.now }
+    temp_items.bsearch_index { |i| i.start_time > earliest_active_start_time }
   temp_items[current_temp_item_index..-1].select(&:active?).tap { |retval|
     File.write('active_items', retval.inspect)
   }
