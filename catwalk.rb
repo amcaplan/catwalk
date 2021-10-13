@@ -31,7 +31,6 @@ SCORES = { :💰 => 10, :🐁 => 6, :🔄 => 2, :💀 => 1 }
 WIDTH = map.first.size
 HEIGHT = map.size
 CAT_LOCATION = { y: HEIGHT / 2, x: WIDTH / 2 }
-AVATAR = '🐈'
 AVATARS = {
   'cat' => '🐈',
   'tiger' => '🐅',
@@ -45,6 +44,7 @@ initial_sleep = 2
 
 state = {
   map: map,
+  avatar: '🐈',
   events: [],
   temp_items: [],
   score: 0,
@@ -123,7 +123,7 @@ def render_frame(timer_window, side_panel, windows, state, init: nil)
         window.setpos(index + 1, 1)
         if index == CAT_LOCATION[:y]
           line = line.dup
-          line[CAT_LOCATION[:x]] = AVATAR
+          line[CAT_LOCATION[:x]] = state[:avatar]
         end
         window << line.join
       end
@@ -200,7 +200,7 @@ thread2 = Thread.new do
     queue.push(input)
     AVATARS.each do |code, avatar|
       if queue.end_with?(code)
-        AVATAR.replace(avatar)
+        state[:avatar].replace(avatar)
       end
     end
     state[:mutex].synchronize do
