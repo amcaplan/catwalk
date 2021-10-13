@@ -84,6 +84,11 @@ state = {
   temp_items: [],
   score: 0,
   last_updated: Time.now,
+  frame_count: {
+    second: Time.now.round,
+    count: 0,
+    last_frame_count: 0
+  },
   mutex: Mutex.new
 }
 
@@ -123,9 +128,17 @@ def render_instructions(side_panel)
 end
 
 def render_frame(timer_window, side_panel, windows, state, init: nil)
+  cur_second = Time.now.round
+  if state[:frame_count][:second] == cur_second
+    state[:frame_count][:count] += 1
+  else
+    state[:frame_count][:second] = cur_second
+    state[:frame_count][:last_frame_count] = state[:frame_count][:count]
+    state[:frame_count][:count] = 1
+  end
   timer_window.clear
   timer_window.setpos(1, 1)
-  timer_window << "#{'%.2f' % (init ? Time.now - init : 0).round(2)} seconds elapsed /"
+  timer_window << "Time: #{'%.2f' % (init ? Time.now - init : 0).round(2)} / #{state[:frame_count][:last_frame_count]} FPS /"
   # mem = GetProcessMem.new
   # timer_window << " Memory used : #{mem.mb.round(0)} MB"
   # timer_window << " Min line size: #{state[:map].map(&:size).min}"
