@@ -175,7 +175,7 @@ thread1 = Thread.new do
       when :🔄
         state[:map] = state[:map].transpose.map(&:reverse)
       else
-        state[:map] = state[:map].map { |line| line.rotate(-1) }
+        state[:map].map! { |line| line.rotate(-1) }
       end
       # randomly add new item, approx. once every 3 cycles
       if rand(SIDE_SIZE * 3) == 1
@@ -206,9 +206,9 @@ thread2 = Thread.new do
     state[:mutex].synchronize do
       case input
       when 'A'
-        state[:map] = state[:map].rotate(-1)
+        state[:map].rotate!(-1)
       when 'B'
-        state[:map] = state[:map].rotate(1)
+        state[:map].rotate!(1)
       when 'p'
         $paused = !$paused
         if $paused
