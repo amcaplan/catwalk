@@ -136,7 +136,7 @@ end
 def active_items(temp_items:, **)
   earliest_active_start_time = Time.now - Item::MAX_DURATION
   current_temp_item_index =
-    temp_items.bsearch_index { |i| i.start_time > earliest_active_start_time }
+    temp_items.bsearch_index { |i| i.start_time > earliest_active_start_time } || 0
   temp_items[current_temp_item_index..-1].select(&:active?).tap { |retval|
     File.write('active_items', retval.inspect)
   }
