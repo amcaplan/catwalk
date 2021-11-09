@@ -20,3 +20,5 @@ ruby catwalk.rb
 ```
 
 Instructions are on the right inside the game. Have fun!
+
+<img width="1091" alt="Screen Shot 2021-11-09 at 14 02 43" src="https://user-images.githubusercontent.com/6288426/141004202-7465c9a3-04c3-4866-8102-7cf4967610c1.png">
